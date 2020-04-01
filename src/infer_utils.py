@@ -47,7 +47,8 @@ class OneshotPredictor:
         print('new example shape:', x_tensor.shape)
         with torch.no_grad():
             scores = self.model(self.comparison_tensor.to(self.device), x_tensor.to(self.device)).cpu().tolist()
-
+            
+        scores = [s[0] for s in scores]
         class_prob_container = list(zip(self.comparison_labels, scores))
         top_class = sorted(class_prob_container, key=lambda x: x[1], reverse=True)[0][0]
 
