@@ -16,24 +16,17 @@ class SiameseNet(nn.Module):
         self.encoders = nn.ModuleList([nn.Conv1d(in_channels=self.embed_dim, out_channels=self.hidden_dim, kernel_size=3, stride=1),
                                        nn.Conv1d(in_channels=self.hidden_dim, out_channels=self.hidden_dim, kernel_size=3, stride=1),
                                        nn.Conv1d(in_channels=self.hidden_dim, out_channels=self.hidden_dim, kernel_size=3, stride=1)])
-        # self.dense_hidden = nn.Linear(in_features=int(self.hidden_dim * self.hidden_layers), out_features=512)
         self.pool = nn.AvgPool1d(2)
         # self.dense_hidden = nn.Linear(in_features=int(2 * (self.hidden_dim * len(self.encoders))), out_features=512)
         self.dense_hidden = nn.Linear(in_features=int(2 * self.hidden_dim), out_features=512)
         self.dense_out = nn.Linear(in_features=512, out_features=1)
 
     def _encode_and_pool(self, x, encoder):
-        # return torch.relu(encoder(x).permute(0, 2, 1).max(1)[0])
         return torch.relu(self.pool(encoder(x)))
 
     def forward(self, x_left, x_right):
         x_left_embed = self.embed_dropout(self.embed(x_left)).permute(0, 2, 1)
         x_right_embed = self.embed_dropout(self.embed(x_right)).permute(0, 2, 1)
-
-        # x_left = [self._encode_and_pool(x_left, c) for c in self.encoders]
-        # x_right = [self._encode_and_pool(x_right, c) for c in self.encoders]
-        # x_left = torch.cat(x_left, 1)
-        # x_right = torch.cat(x_right, 1)
 
         # Stacked left encoder output
         for e_ix, e in enumerate(self.encoders):
