@@ -16,8 +16,6 @@ class SiameseNet(nn.Module):
         self.encoders = nn.ModuleList([nn.Conv1d(in_channels=self.embed_dim, out_channels=self.hidden_dim, kernel_size=3, stride=1),
                                        nn.Conv1d(in_channels=self.hidden_dim, out_channels=self.hidden_dim, kernel_size=3, stride=1),
                                        nn.Conv1d(in_channels=self.hidden_dim, out_channels=self.hidden_dim, kernel_size=3, stride=1)])
-
-        # self.dense_hidden = nn.Linear(in_features=int(self.hidden_dim * self.hidden_layers), out_features=512)
         self.pool = nn.AvgPool1d(2)
         self.dense_hidden = nn.Linear(in_features=self.hidden_dim, out_features=512)
         self.dense_out = nn.Linear(in_features=512, out_features=1)
