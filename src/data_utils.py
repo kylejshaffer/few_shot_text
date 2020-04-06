@@ -169,6 +169,21 @@ class DBPediaLoader(Dataset):
         return self.pair_data[index]
 
 
+class ClfLoader(DBPediaLoader):
+    def __init__(self, data):
+        self.data = data
+
+    def get_label_freq(self):
+        print(pd.Series([i[0] for i in self.data]).value_counts())
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        label, tensor = self.data[index]
+        return {'data': tensor, 'label': label}
+
+
 def collate_fn(batch):
     max_len = 150
     left_lens = [i['left'].shape[0] for i in batch]
@@ -185,31 +200,43 @@ def collate_fn(batch):
 
     return left_tensor, right_tensor, label_tensor
 
-def load_dataset(data):
-    dataset = DBPediaLoader(data)
-    sampler = RandomSampler(dataset)
-    data_loader = DataLoader(dataset, sampler=sampler)
+def clf_collate_fn(batch):
+    max_len = 150
+    lens = [i['data'].shape[0] for i in batch]
+    bsz, max_len = len(batch),  max(lens)
+
+    text_tensor = torch.zeros(bsz, max_len, dtype=torch.long)
+    label_tensor = torch.Tensor([i['label'] for i in batch]).long()
+
+    for b_ix, b in enumerate(batch):
+        text_tensor[b_ix, :b['data'].shape[0]] = b['data'].unsqueeze(0)
+
+    return text_tensor, label_tensor
 
 
 if __name__ == '__main__':
     train, test = DataFormatter().get_data()
-    print('Original Label Distributions')
-    print('Train distirubtion')
-    print(pd.Series([i[0] for i in train]).value_counts())
-    print('Test distribution')
-    print(pd.Series([i[0] for i in test]).value_counts())
-    train_set = DBPediaLoader(train, few_shot=True)
-    print(len(train_set))
-    test_set = DBPediaLoader(test, few_shot=False)
-    print(len(test_set))
-    print('Binary Label Distributions')
-    print('Train binary distribution')
-    train_set.get_label_freq()
-    print('Test binary distribution')
-    test_set.get_label_freq()
-    # data_sampler = RandomSampler(dataset)
-    # data_loader = DataLoader(dataset, sampler=data_sampler, batch_size=64, collate_fn=collate_fn)
-    # print(dir(data_loader))
+    # print('Original Label Distributions')
+    # print('Train distirubtion')
+    # print(pd.Series([i[0] for i in train]).value_counts())
+    # print('Test distribution')
+    # print(pd.Series([i[0] for i in test]).value_counts())
+    # train_set = DBPediaLoader(train, few_shot=True)
+    # print(len(train_set))
+    # test_set = DBPediaLoader(test, few_shot=False)
+    # print(len(test_set))
+    # print('Binary Label Distributions')
+    # print('Train binary distribution')
+    # train_set.get_label_freq()
+    # print('Test binary distribution')
+    # test_set.get_label_freq()
 
-    # for batch in data_loader:
-    #     print(batch[0].shape, batch[1].shape, batch[2].shape)
+    train_set = ClfLoader(train)
+    sampler = RandomSampler(train_set)
+    loader = DataLoader(train_set, sampler=sampler, batch_size=2, collate_fn=clf_collate_fn)
+
+    for ix, (x, y) in enumerate(loader):
+        print(x)
+        print(y)
+        if ix > 20:
+            break
